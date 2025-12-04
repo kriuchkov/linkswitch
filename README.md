@@ -43,6 +43,11 @@ brew install --cask linkswitch
 5. Set as Default Browser:
    Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
 
+   > **Note:** If LinkSwitch does not appear in the list, launch the application manually once to register it with the system, or run the following command:
+   > ```sh
+   > /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/LinkSwitch.app
+   > ```
+
 ### Option 3: Build from Source
 
 1. **Build:**
@@ -69,6 +74,7 @@ brew install --cask linkswitch
 
 4. **Set as Default Browser:**
    Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
+   (The `make install` command attempts to register the app automatically, so it should appear in the list immediately.)
 
 ## Configuration
 

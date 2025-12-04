@@ -39,6 +39,8 @@ install: bundle
 	@echo "Installing to /Applications..."
 	rm -rf /Applications/$(APP_NAME)
 	cp -r $(APP_BUNDLE) /Applications/
+	@echo "Registering with Launch Services..."
+	/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/$(APP_NAME)
 	@echo "Done."
 
 # Release targets
