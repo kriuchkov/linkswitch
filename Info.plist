@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>LinkSwitch</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.nkriuchkov.linkswitch</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>LinkSwitch</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.13</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Web Site URL</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>http</string>
+                <string>https</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Local File URL</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>file</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>HTML File</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.html</string>
+                <string>public.xhtml</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

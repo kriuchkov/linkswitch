@@ -1,0 +1,143 @@
+# LinkSwitch
+
+**LinkSwitch** is an ultra-lightweight native link router for macOS, written in C/Objective-C.
+It replaces the default browser and allows you to open links in different browsers based on rules or via a selection menu.
+
+## Inspiration
+
+This project is inspired by [Browserosaurus](https://github.com/will-stone/browserosaurus). ❤️
+
+## Features
+
+- **Instant Launch**: Written in native code, consumes 20MB RAM for routering links.
+- **Rules**: Flexible configuration via YAML (`~/.config/linkswitch/config.yaml`).
+- **Selection Menu**: If no rule is matched, shows a system window with a list of installed browsers.
+
+## Installation
+
+1. **Build:**
+
+  ```sh
+  make
+  ```
+
+1. **Install:**
+
+  ```sh
+  make install
+  ```
+
+  The command will copy `LinkSwitch.app` to the `/Applications` folder.
+
+1. **Configuration:**
+  Create the configuration folder and file:
+
+  ```sh
+  mkdir -p ~/.config/linkswitch
+  cp config.yaml ~/.config/linkswitch/
+  ```
+
+1. **Set as Default Browser:**
+  Open **System Settings** -> **Desktop & Dock** -> **Default web browser** and select **LinkSwitch**.
+
+## Configuration
+
+Example `~/.config/linkswitch/config.yaml`:
+
+```yaml
+default: Safari
+
+rules:
+  # Open Zoom links in Zoom app
+  - match: "zoom.us"
+   browser: "zoom.us" 
+  
+  # Work links - in Chrome
+  - match: "github.com|gitlab.com"
+   browser: "Google Chrome"
+  
+  # Local development - in Firefox
+  - match: "localhost|127.0.0.1"
+   browser: "Firefox"
+
+# List of browsers for the selection menu (if no rule is matched)
+# If this list is empty or missing, the app will show only Safari.
+browsers:
+  - Safari
+  - Google Chrome
+  - Firefox
+  - Brave Browser
+
+```
+
+## Uninstall
+
+Delete `/Applications/LinkSwitch.app`.
+
+## Features
+
+- **Instant Launch**: Written in native code, consumes 20MB RAM.
+- **Zero Background Usage**: The app runs only when a link is clicked and exits immediately after.
+- **Rules**: Flexible configuration via YAML (`~/.config/linkswitch/config.yaml`).
+- **Selection Menu**: If no rule is matched, shows a system window with a list of installed browsers.
+
+## Installation
+
+1. **Build:**
+
+   ```sh
+   make
+   ```
+
+2. **Install:**
+
+   ```sh
+   make install
+   ```
+
+   The command will copy `LinkSwitch.app` to the `/Applications` folder.
+
+3. **Configuration:**
+   Create the configuration folder and file:
+
+   ```sh
+   mkdir -p ~/.config/linkswitch
+   cp config.yaml ~/.config/linkswitch/
+   ```
+
+4. **Set as Default Browser:**
+   Open **System Settings** -> **Desktop & Dock** -> **Default web browser** and select **LinkSwitch**.
+
+## Configuration
+
+Example `~/.config/linkswitch/config.yaml`:
+
+```yaml
+default: Safari
+
+rules:
+  # Open Zoom links in Zoom app
+  - match: "zoom.us"
+    browser: "zoom.us" 
+  
+  # Work links - in Chrome
+  - match: "github.com|gitlab.com"
+    browser: "Google Chrome"
+  
+  # Local development - in Firefox
+  - match: "localhost|127.0.0.1"
+    browser: "Firefox"
+
+# List of browsers for the selection menu (if no rule is matched)
+# If this list is empty or missing, the app will show only Safari.
+browsers:
+  - Safari
+  - Google Chrome
+  - Firefox
+  - Brave Browser
+
+```
+
+## Uninstall
+
+Delete `/Applications/LinkSwitch.app`.

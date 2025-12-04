@@ -1,0 +1,7 @@
+# Configuration file for LinkSwitch
+default: Safari
+browsers:
+  - Safari
+  - Google Chrome
+  - Firefox
+
