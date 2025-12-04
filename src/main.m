@@ -61,11 +61,11 @@
         browsers = @[@"Safari"];
     }
     
-    CGFloat windowWidth = 300;
-    CGFloat padding = 10;
-    CGFloat buttonHeight = 30;
-    CGFloat textHeight = 20;
-    CGFloat buttonGap = 5;
+    CGFloat windowWidth = 260;
+    CGFloat padding = 8;
+    CGFloat buttonHeight = 26;
+    CGFloat textHeight = 18;
+    CGFloat buttonGap = 4;
     
     // Calculate height
     // Title + URL + (Browsers + Cancel) * (Height + Gap) + Padding
@@ -104,10 +104,27 @@
     
     // Browser Buttons
     for (NSInteger i = 0; i < browsers.count; i++) {
-        NSButton *btn = [NSButton buttonWithTitle:browsers[i] target:self action:@selector(browserButtonClicked:)];
+        NSString *title = browsers[i];
+        NSString *keyEq = @"";
+        NSEventModifierFlags mask = 0;
+        
+        if (i < 9) {
+            NSInteger keyNum = i + 1;
+            title = [NSString stringWithFormat:@"⌘%ld | %@", (long)keyNum, browsers[i]];
+            keyEq = [NSString stringWithFormat:@"%ld", (long)keyNum];
+            mask = NSEventModifierFlagCommand;
+        }
+
+        NSButton *btn = [NSButton buttonWithTitle:title target:self action:@selector(browserButtonClicked:)];
         [btn setFrame:NSMakeRect(padding, currentY, windowWidth - 2*padding, buttonHeight)];
         [btn setTag:i];
         [btn setBezelStyle:NSBezelStyleRounded];
+        
+        if (keyEq.length > 0) {
+            [btn setKeyEquivalent:keyEq];
+            [btn setKeyEquivalentModifierMask:mask];
+        }
+
         [contentView addSubview:btn];
         currentY -= (buttonHeight + buttonGap);
     }
