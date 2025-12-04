@@ -16,30 +16,59 @@ This project is inspired by [Browserosaurus](https://github.com/will-stone/brows
 
 ## Installation
 
+### Option 1: Homebrew (Recommended)
+
+```sh
+brew tap kriuchkov/tap
+brew install --cask linkswitch
+```
+
+### Option 2: Download from Releases
+
+1. Download `LinkSwitch.zip` from [Releases](https://github.com/kriuchkov/linkswitch/releases)
+2. Unzip and move `LinkSwitch.app` to `/Applications`
+3. Remove the quarantine attribute (required for unsigned apps):
+
+   ```sh
+   xattr -cr /Applications/LinkSwitch.app
+   ```
+
+4. Create the configuration folder and file:
+
+   ```sh
+   mkdir -p ~/.config/linkswitch
+   curl -o ~/.config/linkswitch/config.yaml https://raw.githubusercontent.com/kriuchkov/linkswitch/main/config.yaml
+   ```
+
+5. Set as Default Browser:
+   Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
+
+### Option 3: Build from Source
+
 1. **Build:**
 
-  ```sh
-  make
-  ```
+   ```sh
+   make
+   ```
 
-1. **Install:**
+2. **Install:**
 
-  ```sh
-  make install
-  ```
+   ```sh
+   make install
+   ```
 
-  The command will copy `LinkSwitch.app` to the `/Applications` folder.
+   The command will copy `LinkSwitch.app` to the `/Applications` folder.
 
-1. **Configuration:**
-  Create the configuration folder and file:
+3. **Configuration:**
+   Create the configuration folder and file:
 
-  ```sh
-  mkdir -p ~/.config/linkswitch
-  cp config.yaml ~/.config/linkswitch/
-  ```
+   ```sh
+   mkdir -p ~/.config/linkswitch
+   cp config.yaml ~/.config/linkswitch/
+   ```
 
-1. **Set as Default Browser:**
-  Open **System Settings** -> **Desktop & Dock** -> **Default web browser** and select **LinkSwitch**.
+4. **Set as Default Browser:**
+   Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
 
 ## Configuration
 
