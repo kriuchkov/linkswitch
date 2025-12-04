@@ -40,3 +40,28 @@ install: bundle
 	rm -rf /Applications/$(APP_NAME)
 	cp -r $(APP_BUNDLE) /Applications/
 	@echo "Done."
+
+# Release targets
+# Usage: make release VERSION=1.1.0
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+HOMEBREW_TAP ?= ../homebrew-tap
+
+release: bundle
+	@if [ "$(VERSION)" = "0.0.0" ]; then echo "Usage: make release VERSION=1.1.0"; exit 1; fi
+	@echo "Creating release v$(VERSION)..."
+	cd $(BUILD_DIR) && zip -r ../LinkSwitch.zip $(APP_NAME)
+	@echo "Created LinkSwitch.zip"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. git tag v$(VERSION)"
+	@echo "  2. git push origin v$(VERSION)"
+	@echo "  3. Upload LinkSwitch.zip to GitHub Release"
+	@echo "  4. Run: make update-homebrew VERSION=$(VERSION)"
+
+update-homebrew:
+	@if [ "$(VERSION)" = "0.0.0" ]; then echo "Usage: make update-homebrew VERSION=1.1.0"; exit 1; fi
+	@if [ ! -d "$(HOMEBREW_TAP)" ]; then echo "Error: $(HOMEBREW_TAP) not found"; exit 1; fi
+	cd $(HOMEBREW_TAP) && ./scripts/update-cask.sh linkswitch $(VERSION) \
+		"https://github.com/kriuchkov/linkswitch/releases/download/v$(VERSION)/LinkSwitch.zip"
+
+.PHONY: all bundle test clean install release update-homebrew
