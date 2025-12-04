@@ -27,7 +27,7 @@ bundle: $(TARGET) resources/Info.plist
 	@echo "Built $(APP_BUNDLE)"
 
 test: src/config.c tests/test_config.c
-	$(CC) $(CFLAGS) -o test_runner src/config.c tests/test_config.c
+	$(CC) $(CFLAGS) -I. -o test_runner src/config.c tests/test_config.c
 	./test_runner
 	rm test_runner
 
