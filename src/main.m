@@ -5,20 +5,8 @@
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
 
-@implementation AppDelegate
-
-- (NSArray<NSString *> *)getInstalledBrowsers {
-    NSURL *url = [NSURL URLWithString:@"https://www.google.com"];
-    NSArray<NSURL *> *appURLs = [[NSWorkspace sharedWorkspace] URLsForApplicationsToOpenURL:url];
-    
-    NSMutableArray *browsers = [NSMutableArray array];
-    for (NSURL *appURL in appURLs) {
-        NSString *name = [[appURL lastPathComponent] stringByDeletingPathExtension];
-        [browsers addObject:name];
-    }
-    // Sort alphabetically
-    [browsers sortUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-    return browsers;
+@implementation AppDelegate {
+    BOOL _isHandlingURL;
 }
 
 - (void)openURL:(NSString *)urlString withBrowser:(NSString *)browserName {
@@ -35,7 +23,6 @@
                        launchIdentifiers:nil];
         } else {
             NSLog(@"Could not find browser: %@", browserName);
-            // Fallback to default open if specific browser fails
             [workspace openURL:url];
         }
     } else {
@@ -147,15 +134,14 @@
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
+    _isHandlingURL = YES;
     NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
     if (!urlString) return;
     
     // Load Config
-    const char *home = getenv("HOME");
-    char configPath[1024];
-    snprintf(configPath, sizeof(configPath), "%s/.config/linkswitch/config.yaml", home);
+    NSString *configPath = [NSHomeDirectory() stringByAppendingPathComponent:@".config/linkswitch/config.yaml"];
     
-    Config *config = load_config(configPath);
+    Config *config = load_config([configPath UTF8String]);
     char *targetBrowser = NULL;
     
     if (config) {
@@ -184,10 +170,19 @@
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    // If launched without URL (e.g. double click), just quit or show settings?
-    // For now, just quit if no event comes in quickly, but usually the event comes before this or right after.
-    // Actually, if we are just an agent, we stay running only if processing.
-    // But if launched manually, we might want to show instructions.
+    // If not handling a URL (e.g. launched directly), open config file
+    if (!_isHandlingURL) {
+        NSString *configPath = [NSHomeDirectory() stringByAppendingPathComponent:@".config/linkswitch/config.yaml"];
+        if (![[NSFileManager defaultManager] fileExistsAtPath:configPath]) {
+            // Create directory if needed
+            NSString *configDir = [configPath stringByDeletingLastPathComponent];
+            [[NSFileManager defaultManager] createDirectoryAtPath:configDir withIntermediateDirectories:YES attributes:nil error:nil];
+            // Create empty config
+            [[NSFileManager defaultManager] createFileAtPath:configPath contents:[NSData data] attributes:nil];
+        }
+        [[NSWorkspace sharedWorkspace] openFile:configPath];
+        [NSApp terminate:nil];
+    }
 }
 
 @end

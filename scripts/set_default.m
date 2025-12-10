@@ -3,7 +3,7 @@
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         // Identifier of our app
-        NSString *bundleID = @"com.nkriuchkov.linkswitch";
+        NSString *bundleID = @"com.kriuchkov.linkswitch";
         
         // Get the current default browser
         NSURL *currentBrowser = [[NSWorkspace sharedWorkspace] URLForApplicationToOpenURL:[NSURL URLWithString:@"http://google.com"]];

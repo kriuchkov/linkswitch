@@ -1,7 +1,7 @@
 import Cocoa
 import CoreServices
 
-let bundleID = "com.nkriuchkov.linkswitch" as CFString
+let bundleID = "com.kriuchkov.linkswitch" as CFString
 
 print("Attempting to register \(bundleID) as default browser...")
 
