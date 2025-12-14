@@ -47,5 +47,6 @@ jobs:
         formula-path: Casks/linkswitch.rb
         homebrew-tap: kriuchkov/homebrew-tap
         download-url: https://github.com/kriuchkov/linkswitch/releases/download/${{ github.ref_name }}/LinkSwitch.zip
+        create-pullrequest: false
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
