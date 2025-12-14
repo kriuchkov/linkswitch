@@ -44,6 +44,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         formula-name: linkswitch
+        formula-path: Casks/linkswitch.rb
         homebrew-tap: kriuchkov/homebrew-tap
         download-url: https://github.com/kriuchkov/linkswitch/releases/download/${{ github.ref_name }}/LinkSwitch.zip
       env:
