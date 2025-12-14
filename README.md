@@ -44,6 +44,7 @@ brew install --cask linkswitch
    Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
 
    > **Note:** If LinkSwitch does not appear in the list, launch the application manually once to register it with the system, or run the following command:
+>
    > ```sh
    > /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/LinkSwitch.app
    > ```
@@ -83,26 +84,60 @@ Example `~/.config/linkswitch/config.yaml`:
 ```yaml
 default: Safari
 
+# Define browser profiles with specific arguments (optional)
+profiles:
+  - name: "Chrome Work"
+    app: "Google Chrome"
+    args: "--profile-directory='Profile 1'"
+  - name: "Chrome Personal"
+    app: "Google Chrome"
+    args: "--profile-directory='Default'"
+
 rules:
   # Open Zoom links in Zoom app
   - match: "zoom.us"
-   browser: "zoom.us" 
+    browser: "zoom.us" 
   
-  # Work links - in Chrome
+  # Work links - in Chrome Work profile
   - match: "github.com|gitlab.com"
-   browser: "Google Chrome"
+    browser: "Chrome Work"
   
   # Local development - in Firefox
   - match: "localhost|127.0.0.1"
-   browser: "Firefox"
+    browser: "Firefox"
 
 # List of browsers for the selection menu (if no rule is matched)
-# If this list is empty or missing, the app will show only Safari.
+# You can include both regular app names and defined profile names here.
 browsers:
   - Safari
-  - Google Chrome
+  - "Google Chrome"
+  - "Chrome Work"
   - Firefox
-  - Brave Browser
+```
+
+### Profiles
+
+You can define custom profiles for browsers that support command-line arguments (like Chrome, Brave, Edge). This is useful for opening links in specific user profiles.
+
+- `name`: The unique name you will use in `rules` and `browsers` list.
+- `app`: The actual application name (e.g., "Google Chrome").
+- `args`: Command-line arguments to pass when launching.
+
+### Rules
+
+- `match`: A regex string to match against the URL.
+- `browser`: The name of the browser (or profile) to open.
+
+### Browsers List
+
+This list defines the buttons shown in the picker window when no rule matches the URL.
+If this list is empty or missing, the app will show only Safari.
+browsers:
+
+- Safari
+- Google Chrome
+- Firefox
+- ...
 
 ```
 

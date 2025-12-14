@@ -29,12 +29,17 @@ Config* load_config(const char *path) {
     config->rule_count = 0;
     config->browsers = NULL;
     config->browser_count = 0;
+    config->profiles = NULL;
+    config->profile_count = 0;
 
     char line[1024];
     int in_rules = 0;
     int in_browsers = 0;
+    int in_profiles = 0;
     Rule current_rule = {0};
     int has_current_rule = 0;
+    BrowserProfile current_profile = {0};
+    int has_current_profile = 0;
 
     while (fgets(line, sizeof(line), f)) {
         char *trimmed = line;
@@ -46,9 +51,15 @@ Config* load_config(const char *path) {
         } else if (strncmp(trimmed, "rules:", 6) == 0) {
             in_rules = 1;
             in_browsers = 0;
+            in_profiles = 0;
         } else if (strncmp(trimmed, "browsers:", 9) == 0) {
             in_browsers = 1;
             in_rules = 0;
+            in_profiles = 0;
+        } else if (strncmp(trimmed, "profiles:", 9) == 0) {
+            in_profiles = 1;
+            in_rules = 0;
+            in_browsers = 0;
         } else if (in_rules) {
             if (strncmp(trimmed, "- match:", 8) == 0) {
                 if (has_current_rule) {
@@ -70,6 +81,25 @@ Config* load_config(const char *path) {
                 config->browsers = realloc(config->browsers, sizeof(char*) * config->browser_count);
                 config->browsers[config->browser_count - 1] = clean_string(trimmed + 2);
             }
+        } else if (in_profiles) {
+            if (strncmp(trimmed, "- name:", 7) == 0) {
+                if (has_current_profile) {
+                    config->profile_count++;
+                    config->profiles = realloc(config->profiles, sizeof(BrowserProfile) * config->profile_count);
+                    config->profiles[config->profile_count - 1] = current_profile;
+                    memset(&current_profile, 0, sizeof(BrowserProfile));
+                }
+                current_profile.name = clean_string(trimmed + 7);
+                has_current_profile = 1;
+            } else if (strncmp(trimmed, "app:", 4) == 0) {
+                if (has_current_profile) {
+                    current_profile.app_name = clean_string(trimmed + 4);
+                }
+            } else if (strncmp(trimmed, "args:", 5) == 0) {
+                if (has_current_profile) {
+                    current_profile.args = clean_string(trimmed + 5);
+                }
+            }
         }
     }
     
@@ -78,6 +108,13 @@ Config* load_config(const char *path) {
         config->rule_count++;
         config->rules = realloc(config->rules, sizeof(Rule) * config->rule_count);
         config->rules[config->rule_count - 1] = current_rule;
+    }
+
+    // Add the last profile
+    if (has_current_profile && current_profile.name) {
+        config->profile_count++;
+        config->profiles = realloc(config->profiles, sizeof(BrowserProfile) * config->profile_count);
+        config->profiles[config->profile_count - 1] = current_profile;
     }
 
     fclose(f);
@@ -96,7 +133,23 @@ void free_config(Config *config) {
         free(config->browsers[i]);
     }
     free(config->browsers);
+    for (int i = 0; i < config->profile_count; i++) {
+        free(config->profiles[i].name);
+        free(config->profiles[i].app_name);
+        free(config->profiles[i].args);
+    }
+    free(config->profiles);
     free(config);
+}
+
+BrowserProfile* find_profile(Config *config, const char *name) {
+    if (!config || !name) return NULL;
+    for (int i = 0; i < config->profile_count; i++) {
+        if (strcmp(config->profiles[i].name, name) == 0) {
+            return &config->profiles[i];
+        }
+    }
+    return NULL;
 }
 
 char* find_browser_for_url(Config *config, const char *url) {

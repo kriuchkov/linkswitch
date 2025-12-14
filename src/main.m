@@ -9,9 +9,29 @@
     BOOL _isHandlingURL;
 }
 
-- (void)openURL:(NSString *)urlString withBrowser:(NSString *)browserName {
+- (void)openURL:(NSString *)urlString withBrowser:(NSString *)browserName config:(Config *)config {
     NSURL *url = [NSURL URLWithString:urlString];
     NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+    
+    BrowserProfile *profile = config ? find_profile(config, [browserName UTF8String]) : NULL;
+    
+    if (profile) {
+        NSString *appName = [NSString stringWithUTF8String:profile->app_name];
+        NSString *argsStr = profile->args ? [NSString stringWithUTF8String:profile->args] : @"";
+        
+        NSTask *task = [[NSTask alloc] init];
+        [task setLaunchPath:@"/bin/sh"];
+        
+        NSString *escapedAppName = [appName stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+        NSString *escapedURL = [urlString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+        
+        NSString *command = [NSString stringWithFormat:@"open -n -a \"%@\" \"%@\" --args %@", 
+                             escapedAppName, escapedURL, argsStr];
+        
+        [task setArguments:@[@"-c", command]];
+        [task launch];
+        return;
+    }
     
     if (browserName) {
         NSString *appPath = [workspace fullPathForApplication:browserName];
@@ -129,7 +149,7 @@
     [window close];
     
     if (response >= 0 && response < browsers.count) {
-        [self openURL:urlString withBrowser:browsers[response]];
+        [self openURL:urlString withBrowser:browsers[response] config:config];
     }
 }
 
@@ -150,7 +170,7 @@
     
     if (targetBrowser) {
         NSString *browserName = [NSString stringWithUTF8String:targetBrowser];
-        [self openURL:urlString withBrowser:browserName];
+        [self openURL:urlString withBrowser:browserName config:config];
     } else {
         // No rule matched, show picker
         [self showBrowserPickerForURL:urlString withConfig:config];

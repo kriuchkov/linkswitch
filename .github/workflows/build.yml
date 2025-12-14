@@ -38,3 +38,13 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: LinkSwitch.zip
+
+    - name: Update Homebrew Formula
+      uses: mislav/bump-homebrew-formula-action@v3
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        formula-name: linkswitch
+        homebrew-tap: kriuchkov/homebrew-tap
+        download-url: https://github.com/kriuchkov/linkswitch/releases/download/${{ github.ref_name }}/LinkSwitch.zip
+      env:
+        COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
