@@ -139,7 +139,6 @@ browsers:
 - Firefox
 - ...
 
-```
 
 ## Uninstall
 
