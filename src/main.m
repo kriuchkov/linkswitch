@@ -16,17 +16,24 @@
     BrowserProfile *profile = config ? find_profile(config, [browserName UTF8String]) : NULL;
     
     if (profile) {
-        NSString *appName = [NSString stringWithUTF8String:profile->app_name];
-        NSString *argsStr = profile->args ? [NSString stringWithUTF8String:profile->args] : @"";
-        
         NSTask *task = [[NSTask alloc] init];
         [task setLaunchPath:@"/bin/sh"];
         
-        NSString *escapedAppName = [appName stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+        NSString *command;
         NSString *escapedURL = [urlString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-        
-        NSString *command = [NSString stringWithFormat:@"open -n -a \"%@\" \"%@\" --args %@", 
-                             escapedAppName, escapedURL, argsStr];
+
+        if (profile->custom_cmd) {
+            NSString *cmdTemplate = [NSString stringWithUTF8String:profile->custom_cmd];
+            command = [cmdTemplate stringByReplacingOccurrencesOfString:@"{url}" withString:escapedURL];
+        } else {
+            NSString *appName = [NSString stringWithUTF8String:profile->app_name];
+            NSString *argsStr = profile->args ? [NSString stringWithUTF8String:profile->args] : @"";
+            
+            NSString *escapedAppName = [appName stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+            
+            command = [NSString stringWithFormat:@"open -n -a \"%@\" \"%@\" --args %@", 
+                                 escapedAppName, escapedURL, argsStr];
+        }
         
         [task setArguments:@[@"-c", command]];
         [task launch];

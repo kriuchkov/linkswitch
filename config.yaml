@@ -1,7 +1,19 @@
 # Configuration file for LinkSwitch
 default: Safari
+
 browsers:
   - Safari
   - Google Chrome
   - Firefox
+  - Secure Chrome
+
+profiles:
+  - name: Secure Chrome
+    cmd: "/usr/bin/sandbox-exec -f ~/.config/linkswitch/chrome_strict.sb /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --user-data-dir=/tmp/secure_chrome --no-first-run --no-default-browser-check -user-data-dir=/tmp/secure_chrome --password-store=basic \"{url}\""
+
+rules:
+  - match: "whoer.net"
+    browser: Secure Chrome
+  - match: "browserleaks.com"
+    browser: Secure Chrome
 

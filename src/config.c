@@ -99,6 +99,10 @@ Config* load_config(const char *path) {
                 if (has_current_profile) {
                     current_profile.args = clean_string(trimmed + 5);
                 }
+            } else if (strncmp(trimmed, "cmd:", 4) == 0) {
+                if (has_current_profile) {
+                    current_profile.custom_cmd = clean_string(trimmed + 4);
+                }
             }
         }
     }
@@ -137,6 +141,7 @@ void free_config(Config *config) {
         free(config->profiles[i].name);
         free(config->profiles[i].app_name);
         free(config->profiles[i].args);
+        free(config->profiles[i].custom_cmd);
     }
     free(config->profiles);
     free(config);

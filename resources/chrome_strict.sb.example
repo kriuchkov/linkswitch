@@ -1,0 +1,88 @@
+(version 1)
+(allow default)
+
+;;; -------------------------------------------------------------------------
+;;; STRATEGY: Allow Everything by Default, Then Block Specifics
+;;; This is the most stable approach to prevent crashes while hiding data.
+;;; -------------------------------------------------------------------------
+
+;; 1. Allow all file operations by default
+(allow file*)
+
+;;; -------------------------------------------------------------------------
+;;; BLOCK USER DATA
+;;; -------------------------------------------------------------------------
+
+;; Deny access to the entire Users directory
+(deny file* (subpath "/Users"))
+
+;; Allow access to Keychains (Fixes "Keychain not found" error)
+;; Chrome needs this to store encryption keys.
+(allow file*
+    (regex #"^/Users/[^/]+/Library/Keychains")
+    (subpath "/Library/Keychains")
+    (subpath "/private/var/db/mds") ; Security framework
+)
+
+;; ...But allow access to the Shared folder (optional, often needed)
+(allow file-read* (subpath "/Users/Shared"))
+
+;; ...And allow access to our specific isolated profile if it was placed in /Users
+;; (In your command you use /tmp/secure_chrome, so this is fine)
+
+;;; -------------------------------------------------------------------------
+;;; BLOCK APPLICATIONS (Hide other apps)
+;;; -------------------------------------------------------------------------
+
+;; Deny access to System Applications (Safari, Mail, etc.)
+(deny file* (subpath "/System/Applications"))
+
+;; Deny access to /Applications, using Regex to EXCLUDE Google Chrome
+;; This regex matches any path in /Applications that does NOT start with "Google Chrome.app"
+(deny file* 
+    (regex #"^/Applications/(?!Google Chrome\.app)")
+)
+
+;;; -------------------------------------------------------------------------
+;;; SYSTEM INFO (Try to hide hardware info)
+;;; -------------------------------------------------------------------------
+;; Note: Blocking these might cause Chrome to fail initialization if it checks them strictly.
+;; If Chrome crashes, try commenting these out.
+(deny sysctl-read (sysctl-name "hw.serial"))
+(deny sysctl-read (sysctl-name "hw.uuid"))
+(deny iokit-get-properties (iokit-property "IOPlatformSerialNumber"))
+(deny iokit-get-properties (iokit-property "IOPlatformUUID"))
+(deny iokit-get-properties (iokit-property "serial-number"))
+(deny iokit-get-properties (iokit-property "IOMACAddress"))
+(deny iokit-get-properties (iokit-property "model"))
+
+(deny sysctl-read (sysctl-name "hw.model"))
+;; (deny sysctl-read (sysctl-name "kern.hostname")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "kern.osversion")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "kern.osrelease")) ; Causes crash
+
+;;; Block Process Listing (Hide other running apps)
+;; (deny sysctl-read (sysctl-name "kern.proc")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "kern.procargs2")) ; Causes crash
+
+;;; Block Hardware Specs (Fingerprinting)
+;; (deny sysctl-read (sysctl-name "hw.ncpu")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "hw.activecpu")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "hw.memsize")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "hw.physicalcpu")) ; Causes crash
+;; (deny sysctl-read (sysctl-name "hw.logicalcpu")) ; Causes crash
+
+;;; -------------------------------------------------------------------------
+;;; FIX: GPU & Network Process Crashes (Sandbox Creation)
+;;; -------------------------------------------------------------------------
+;; Chrome uses its own internal sandbox for helper processes.
+;; We must allow it to interact with the system to set up these sandboxes.
+(allow system-mac-syscall)
+(allow process-fork)
+(allow process-exec)
+(allow mach-lookup (global-name "com.apple.secinitd"))
+(allow mach-lookup (global-name "com.apple.system.logger"))
+(allow mach-lookup (global-name "com.apple.system.notification_center"))
+(allow mach-lookup (global-name "com.apple.coreservices.launchservicesd"))
+(allow ipc-posix-shm)
+;; (deny file* (subpath (param "HOME"))) ; Already denied by default above

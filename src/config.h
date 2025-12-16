@@ -10,6 +10,7 @@ typedef struct {
     char *name;
     char *app_name;
     char *args;
+    char *custom_cmd;
 } BrowserProfile;
 
 typedef struct {

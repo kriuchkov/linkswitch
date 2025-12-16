@@ -3,10 +3,6 @@
 **LinkSwitch** is an ultra-lightweight native link router for macOS, written in C/Objective-C.
 It replaces the default browser and allows you to open links in different browsers based on rules or via a selection menu.
 
-## Inspiration
-
-This project is inspired by [Browserosaurus](https://github.com/will-stone/browserosaurus). ❤️
-
 ## Features
 
 - **Instant Launch**: Written in native code, consumes 20MB RAM.
@@ -122,6 +118,34 @@ You can define custom profiles for browsers that support command-line arguments 
 - `name`: The unique name you will use in `rules` and `browsers` list.
 - `app`: The actual application name (e.g., "Google Chrome").
 - `args`: Command-line arguments to pass when launching.
+- `cmd`: (Optional) A full custom command template. Use `{url}` as a placeholder. This overrides `app` and `args`.
+
+#### Basic Examples
+
+```yaml
+profiles:
+  # Standard profile (using app name + args)
+  - name: "Chrome Work"
+    app: "Google Chrome"
+    args: "--profile-directory='Profile 1'"
+
+  # Custom command (e.g. Firefox Private Window)
+  - name: "Firefox Private"
+    cmd: "/Applications/Firefox.app/Contents/MacOS/firefox --private-window '{url}'"
+```
+
+#### Example: Secure Sandboxed Chrome
+
+You can use `cmd` to run Chrome inside a strict macOS Sandbox, hiding your personal data (files, apps) and hardware info (serial number, UUID) from the browser.
+
+1. Create a sandbox profile `~/.config/linkswitch/chrome_strict.sb` (see [`resources/chrome_strict.sb.example`](resources/chrome_strict.sb.example) in the repo).
+2. Add this profile to your `config.yaml`:
+
+```yaml
+profiles:
+  - name: Secure Chrome
+    cmd: "nohup /usr/bin/sandbox-exec -f ~/.config/linkswitch/chrome_strict.sb '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --user-data-dir=/tmp/secure_chrome --no-first-run --password-store=basic --no-sandbox --no-default-browser-check '{url}' >/dev/null 2>&1 &"
+```
 
 ### Rules
 
@@ -139,6 +163,9 @@ browsers:
 - Firefox
 - ...
 
+## Inspiration
+
+This project is inspired by [Browserosaurus](https://github.com/will-stone/browserosaurus). ❤️
 
 ## Uninstall
 
