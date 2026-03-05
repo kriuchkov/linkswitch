@@ -87,8 +87,10 @@ static int load_rules_from_dir(Config *config, const char *config_path) {
         struct dirent *copy = malloc(sizeof(struct dirent));
         if (!copy) continue;
         memcpy(copy, e, sizeof(struct dirent));
-        entries = realloc(entries, sizeof(struct dirent*) * (n + 1));
-        if (!entries) { free(copy); continue; }
+        // Reallocate entries array to hold the new entry
+        struct dirent **tmp = realloc(entries, sizeof(struct dirent*) * (n + 1));
+        if (!tmp) { free(copy); continue; }
+        entries = tmp;
         entries[n++] = copy;
     }
     closedir(d);
@@ -130,7 +132,27 @@ static int load_rules_from_dir(Config *config, const char *config_path) {
             if (!pattern) continue;
 
             new_rule_count++;
-            new_rules = realloc(new_rules, sizeof(Rule) * new_rule_count);
+            Rule *tmp_rules = realloc(new_rules, sizeof(Rule) * new_rule_count);
+            if (!tmp_rules) {
+                // Allocation failed: clean up pattern and any partially built rules,
+                // leave existing config->rules untouched, and return error.
+                int j;
+                free(pattern);
+                // Free any rules that were successfully allocated before this failure.
+                for (j = 0; j < new_rule_count - 1; j++) {
+                    free(new_rules[j].match_pattern);
+                    free(new_rules[j].browser_name);
+                }
+                free(new_rules);
+                // Close current file and free remaining directory entries.
+                fclose(f);
+                for (j = i + 1; j < n; j++) {
+                    free(entries[j]);
+                }
+                free(entries);
+                return 0;
+            }
+            new_rules = tmp_rules;
             new_rules[new_rule_count - 1].match_pattern = pattern;
             new_rules[new_rule_count - 1].browser_name = strdup(browser_name);
         }
