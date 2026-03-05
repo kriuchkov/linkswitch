@@ -174,7 +174,6 @@ Create a `rules/` directory next to your config file (`~/.config/linkswitch/rule
 Example `rules/safari`:
 
 ```
-# Work sites
 google.com
 github.com
 gmail.com
