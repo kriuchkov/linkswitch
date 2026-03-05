@@ -149,8 +149,36 @@ profiles:
 
 ### Rules
 
+Rules can be defined in two ways:
+
+**1. In `config.yaml`**:
+
 - `match`: A regex string to match against the URL.
 - `browser`: The name of the browser (or profile) to open.
+
+**2. Directory-based**:
+
+Create a `rules/` directory next to your config file (`~/.config/linkswitch/rules/`). Each file is named by a browser slug (lowercase, spaces → hyphens) with one domain per line:
+
+```
+~/.config/linkswitch/
+├── config.yaml
+└── rules/
+    ├── safari
+    ├── google-chrome
+    ├── firefox
+    └── secure-chrome     # profile names work too
+```
+
+Example `rules/safari`:
+
+```
+google.com
+github.com
+gmail.com
+```
+
+**If `rules/` exists and has valid files, it overrides rules from config.yaml.**
 
 ### Browsers List
 
