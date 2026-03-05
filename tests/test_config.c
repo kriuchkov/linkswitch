@@ -135,6 +135,51 @@ int main() {
     rmdir("test_rules_dir/rules");
     remove("test_rules_dir/config.yaml");
     rmdir("test_rules_dir");
+
+    printf("\nTesting Merged Config + Directory Rules...\n");
+    mkdir("test_merge_dir", 0755);
+    mkdir("test_merge_dir/rules", 0755);
+
+    cfg = fopen("test_merge_dir/config.yaml", "w");
+    fprintf(cfg, "default: Safari\n\n");
+    fprintf(cfg, "rules:\n");
+    fprintf(cfg, "  - match: \"zoom.us\"\n");
+    fprintf(cfg, "    browser: \"Zoom\"\n");
+    fprintf(cfg, "  - match: \"github.com\"\n");
+    fprintf(cfg, "    browser: \"Google Chrome\"\n");
+    fprintf(cfg, "\nbrowsers:\n");
+    fprintf(cfg, "  - Safari\n");
+    fprintf(cfg, "  - Google Chrome\n");
+    fprintf(cfg, "  - Zoom\n");
+    fclose(cfg);
+
+    sf = fopen("test_merge_dir/rules/safari", "w");
+    fprintf(sf, "google.com\ngithub.com\n");
+    fclose(sf);
+
+    config = load_config("test_merge_dir/config.yaml");
+    assert(config != NULL);
+
+    browser = find_browser_for_url(config, "https://zoom.us/j/123");
+    assert(browser != NULL);
+    assert(strcmp(browser, "Zoom") == 0);
+    printf("  [PASS] zoom.us -> Zoom (from config)\n");
+
+    browser = find_browser_for_url(config, "https://github.com/user/repo");
+    assert(browser != NULL);
+    assert(strcmp(browser, "Safari") == 0);
+    printf("  [PASS] github.com -> Safari (directory overrides config)\n");
+
+    browser = find_browser_for_url(config, "https://www.google.com/search");
+    assert(browser != NULL);
+    assert(strcmp(browser, "Safari") == 0);
+    printf("  [PASS] google.com -> Safari (from rules/safari)\n");
+
+    free_config(config);
+    remove("test_merge_dir/rules/safari");
+    rmdir("test_merge_dir/rules");
+    remove("test_merge_dir/config.yaml");
+    rmdir("test_merge_dir");
     
     printf("\nAll tests passed!\n");
     return 0;

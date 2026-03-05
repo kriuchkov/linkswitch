@@ -154,11 +154,12 @@ Rules can be defined in two ways:
 **1. In `config.yaml`**:
 
 - `match`: A regex string to match against the URL.
+    - Setting a match of `.*` to a browser will act as a catch all (only works in config)
 - `browser`: The name of the browser (or profile) to open.
 
 **2. Directory-based**:
 
-Create a `rules/` directory next to your config file (`~/.config/linkswitch/rules/`). Each file is named by a browser slug (lowercase, spaces → hyphens) with one domain per line:
+Create a `rules/` directory next to your config file (`~/.config/linkswitch/rules/`). Each file is named by a browser slug (lowercase, spaces → hyphens) and contains one domain per line. Lines starting with `#` and blank lines are ignored.
 
 ```
 ~/.config/linkswitch/
@@ -173,12 +174,13 @@ Create a `rules/` directory next to your config file (`~/.config/linkswitch/rule
 Example `rules/safari`:
 
 ```
+# Work sites
 google.com
 github.com
 gmail.com
 ```
 
-**If `rules/` exists and has valid files, it overrides rules from config.yaml.**
+Directory rules are merged with config rules. **Directory rules take priority**—when a URL matches both a directory rule and a config rule, the directory rule wins. Config rules add additional mappings for domains not covered by the directory.
 
 ### Browsers List
 

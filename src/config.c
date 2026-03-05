@@ -161,13 +161,23 @@ static int load_rules_from_dir(Config *config, const char *config_path) {
     free(entries);
 
     if (new_rule_count > 0) {
-        for (int i = 0; i < config->rule_count; i++) {
-            free(config->rules[i].match_pattern);
-            free(config->rules[i].browser_name);
+        size_t old_count = (size_t)config->rule_count;
+        config->rule_count += new_rule_count;
+        Rule *merged = realloc(config->rules, sizeof(Rule) * config->rule_count);
+        if (!merged) {
+            for (int i = 0; i < new_rule_count; i++) {
+                free(new_rules[i].match_pattern);
+                free(new_rules[i].browser_name);
+            }
+            free(new_rules);
+            return 0;
         }
-        free(config->rules);
-        config->rules = new_rules;
-        config->rule_count = new_rule_count;
+        config->rules = merged;
+        memmove(config->rules + new_rule_count, config->rules, old_count * sizeof(Rule));
+        for (int i = 0; i < new_rule_count; i++) {
+            config->rules[i] = new_rules[i];
+        }
+        free(new_rules);
         return 1;
     }
     free(new_rules);
@@ -293,7 +303,7 @@ Config* load_config(const char *path) {
 
     fclose(f);
 
-    // If rules/ directory exists, load rules from there (replaces yaml rules)
+    // If rules/ directory exists, prepend its rules (directory rules take priority)
     load_rules_from_dir(config, path);
 
     return config;
