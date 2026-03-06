@@ -1,11 +1,191 @@
 #include "config.h"
+#include <ctype.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
 
+// Forward declaration
+static char* clean_string(const char* input);
+
+// Convert browser name to slug: lowercase, spaces -> hyphens
+static void slugify(const char *name, char *out, size_t out_size) {
+    size_t j = 0;
+    for (const char *p = name; *p && j < out_size - 1; p++) {
+        if (*p == ' ') {
+            if (j > 0 && out[j - 1] != '-') out[j++] = '-';
+        } else if (isalnum((unsigned char)*p) || *p == '-') {
+            out[j++] = (char)tolower((unsigned char)*p);
+        }
+    }
+    out[j] = '\0';
+}
+
+// Check if slug matches a browser or profile name
+static const char* name_for_slug(Config *config, const char *slug) {
+    char buf[256];
+    for (int i = 0; i < config->browser_count; i++) {
+        slugify(config->browsers[i], buf, sizeof(buf));
+        if (strcmp(buf, slug) == 0) return config->browsers[i];
+    }
+    for (int i = 0; i < config->profile_count; i++) {
+        if (!config->profiles[i].name) continue;
+        slugify(config->profiles[i].name, buf, sizeof(buf));
+        if (strcmp(buf, slug) == 0) return config->profiles[i].name;
+    }
+    return NULL;
+}
+
+// Escape regex special chars for literal substring matching
+static char* domain_to_regex(const char *domain) {
+    size_t len = strlen(domain);
+    char *out = malloc(len * 3 + 8);  // worst case: every char escaped + ".*" wrapper
+    if (!out) return NULL;
+    char *p = out;
+    *p++ = '.'; *p++ = '*';
+    for (const char *s = domain; *s; s++) {
+        if (*s == '.' || *s == '[' || *s == ']' || *s == '(' || *s == ')' ||
+            *s == '{' || *s == '}' || *s == '*' || *s == '+' || *s == '?' ||
+            *s == '^' || *s == '$' || *s == '|' || *s == '\\') {
+            *p++ = '\\';
+        }
+        *p++ = *s;
+    }
+    *p++ = '.'; *p++ = '*'; *p = '\0';
+    return out;
+}
+
+// Compare dirent names for qsort
+static int dirent_cmp(const void *a, const void *b) {
+    return strcmp((*(const struct dirent**)a)->d_name, (*(const struct dirent**)b)->d_name);
+}
+
+// Load rules from rules/ directory. Returns 1 if any rules loaded, 0 otherwise.
+static int load_rules_from_dir(Config *config, const char *config_path) {
+    char rules_dir[1024];
+    const char *last_slash = strrchr(config_path, '/');
+    if (last_slash) {
+        size_t prefix_len = (size_t)(last_slash - config_path);
+        if (prefix_len >= sizeof(rules_dir) - 8) return 0;
+        memcpy(rules_dir, config_path, prefix_len);
+        rules_dir[prefix_len] = '\0';
+        strcat(rules_dir, "/rules");
+    } else {
+        strcpy(rules_dir, "rules");
+    }
+
+    DIR *d = opendir(rules_dir);
+    if (!d) return 0;
+
+    struct dirent **entries = NULL;
+    int n = 0;
+    struct dirent *e;
+    while ((e = readdir(d)) != NULL) {
+        if (e->d_name[0] == '.') continue;
+        if (e->d_type != DT_REG && e->d_type != DT_UNKNOWN) continue;
+        struct dirent *copy = malloc(sizeof(struct dirent));
+        if (!copy) continue;
+        memcpy(copy, e, sizeof(struct dirent));
+        // Reallocate entries array to hold the new entry
+        struct dirent **tmp = realloc(entries, sizeof(struct dirent*) * (n + 1));
+        if (!tmp) { free(copy); continue; }
+        entries = tmp;
+        entries[n++] = copy;
+    }
+    closedir(d);
+
+    if (n == 0) {
+        if (entries) free(entries);
+        return 0;
+    }
+
+    qsort(entries, n, sizeof(struct dirent*), dirent_cmp);
+
+    Rule *new_rules = NULL;
+    int new_rule_count = 0;
+
+    for (int i = 0; i < n; i++) {
+        const char *browser_name = name_for_slug(config, entries[i]->d_name);
+        if (!browser_name) {
+            free(entries[i]);
+            continue;
+        }
+
+        char filepath[1024];
+        snprintf(filepath, sizeof(filepath), "%s/%s", rules_dir, entries[i]->d_name);
+        FILE *f = fopen(filepath, "r");
+        free(entries[i]);
+        if (!f) continue;
+
+        char line[1024];
+        while (fgets(line, sizeof(line), f)) {
+            char *trimmed = line;
+            while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+            if (*trimmed == '#' || *trimmed == '\n' || *trimmed == '\0') continue;
+
+            char *domain = clean_string(trimmed);
+            if (!domain || !domain[0]) { free(domain); continue; }
+
+            char *pattern = domain_to_regex(domain);
+            free(domain);
+            if (!pattern) continue;
+
+            new_rule_count++;
+            Rule *tmp_rules = realloc(new_rules, sizeof(Rule) * new_rule_count);
+            if (!tmp_rules) {
+                // Allocation failed: clean up pattern and any partially built rules,
+                // leave existing config->rules untouched, and return error.
+                int j;
+                free(pattern);
+                // Free any rules that were successfully allocated before this failure.
+                for (j = 0; j < new_rule_count - 1; j++) {
+                    free(new_rules[j].match_pattern);
+                    free(new_rules[j].browser_name);
+                }
+                free(new_rules);
+                // Close current file and free remaining directory entries.
+                fclose(f);
+                for (j = i + 1; j < n; j++) {
+                    free(entries[j]);
+                }
+                free(entries);
+                return 0;
+            }
+            new_rules = tmp_rules;
+            new_rules[new_rule_count - 1].match_pattern = pattern;
+            new_rules[new_rule_count - 1].browser_name = strdup(browser_name);
+        }
+        fclose(f);
+    }
+    free(entries);
+
+    if (new_rule_count > 0) {
+        size_t old_count = (size_t)config->rule_count;
+        config->rule_count += new_rule_count;
+        Rule *merged = realloc(config->rules, sizeof(Rule) * config->rule_count);
+        if (!merged) {
+            for (int i = 0; i < new_rule_count; i++) {
+                free(new_rules[i].match_pattern);
+                free(new_rules[i].browser_name);
+            }
+            free(new_rules);
+            return 0;
+        }
+        config->rules = merged;
+        memmove(config->rules + new_rule_count, config->rules, old_count * sizeof(Rule));
+        for (int i = 0; i < new_rule_count; i++) {
+            config->rules[i] = new_rules[i];
+        }
+        free(new_rules);
+        return 1;
+    }
+    free(new_rules);
+    return 0;
+}
+
 // Helper to trim whitespace and quotes
-char* clean_string(const char* input) {
+static char* clean_string(const char* input) {
     const char* start = input;
     while (*start == ' ' || *start == '\t' || *start == '"' || *start == '\'') start++;
     
@@ -122,6 +302,10 @@ Config* load_config(const char *path) {
     }
 
     fclose(f);
+
+    // If rules/ directory exists, prepend its rules (directory rules take priority)
+    load_rules_from_dir(config, path);
+
     return config;
 }
 
