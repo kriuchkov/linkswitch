@@ -1,7 +1,50 @@
-# LinkSwitch
+<p align="center">
+  <img src="assets/logo.png" width="112" height="112" alt="" />
+</p>
 
-**LinkSwitch** is an ultra-lightweight native link router for macOS, written in C/Objective-C.
-It replaces the default browser and allows you to open links in different browsers based on rules or via a selection menu.
+<h1 align="center">LinkSwitch</h1>
+
+<p align="center">
+  An ultra-lightweight native link router for macOS.<br />
+  Every link opens in the right browser — by rule, or from a picker.
+</p>
+
+<p align="center">
+  <a href="https://github.com/kriuchkov/linkswitch/releases">
+    <img src="https://img.shields.io/github/v/release/kriuchkov/linkswitch?style=flat-square" alt="Release" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/kriuchkov/linkswitch?style=flat-square" alt="License" />
+  </a>
+  <a href="https://github.com/kriuchkov/linkswitch/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/kriuchkov/linkswitch/build.yml?style=flat-square&label=build" alt="Build" />
+  </a>
+  <a href="#option-1-homebrew-recommended">
+    <img src="https://img.shields.io/badge/homebrew-cask-FBB040?style=flat-square&logo=homebrew&logoColor=white" alt="Homebrew cask" />
+  </a>
+  <img src="https://img.shields.io/badge/macOS-10.13%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 10.13 or newer" />
+  <img src="https://img.shields.io/badge/C%20%2F%20Objective--C-A8B9CC?style=flat-square&logo=c&logoColor=white" alt="Written in C and Objective-C" />
+</p>
+
+<p align="center">
+  <a href="#features"><strong>Features</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#installation"><strong>Installation</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#configuration"><strong>Configuration</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#profiles"><strong>Profiles</strong></a>
+  <br />
+  <a href="#rules"><strong>Rules</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#browsers-list"><strong>Browsers</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#inspiration"><strong>Inspiration</strong></a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="#license"><strong>License</strong></a>
+</p>
+
+**LinkSwitch** is an ultra-lightweight native link router for macOS, written in C/Objective-C. It replaces the default browser and allows you to open links in different browsers based on rules or via a selection menu.
 
 ## Features
 
@@ -33,14 +76,13 @@ brew install --cask linkswitch
 
    ```sh
    mkdir -p ~/.config/linkswitch
-   curl -o ~/.config/linkswitch/config.yaml https://raw.githubusercontent.com/kriuchkov/linkswitch/main/config.yaml
+   curl -o ~/.config/linkswitch/config.yaml https://raw.githubusercontent.com/kriuchkov/linkswitch/master/config.yaml
    ```
 
-5. Set as Default Browser:
-   Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
+5. Set as Default Browser: Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
 
    > **Note:** If LinkSwitch does not appear in the list, launch the application manually once to register it with the system, or run the following command:
->
+   >
    > ```sh
    > /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/LinkSwitch.app
    > ```
@@ -61,17 +103,14 @@ brew install --cask linkswitch
 
    The command will copy `LinkSwitch.app` to the `/Applications` folder.
 
-3. **Configuration:**
-   Create the configuration folder and file:
+3. **Configuration:** Create the configuration folder and file:
 
    ```sh
    mkdir -p ~/.config/linkswitch
    cp config.yaml ~/.config/linkswitch/
    ```
 
-4. **Set as Default Browser:**
-   Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**.
-   (The `make install` command attempts to register the app automatically, so it should appear in the list immediately.)
+4. **Set as Default Browser:** Open **System Settings** → **Desktop & Dock** → **Default web browser** and select **LinkSwitch**. (The `make install` command attempts to register the app automatically, so it should appear in the list immediately.)
 
 ## Configuration
 
@@ -183,14 +222,14 @@ Directory rules are merged with config rules. **Directory rules take priority**�
 
 ### Browsers List
 
-This list defines the buttons shown in the picker window when no rule matches the URL.
-If this list is empty or missing, the app will show only Safari.
-browsers:
+This list defines the buttons shown in the picker window when no rule matches the URL. If this list is empty or missing, the app will show only Safari.
 
-- Safari
-- Google Chrome
-- Firefox
-- ...
+```yaml
+browsers:
+  - Safari
+  - Google Chrome
+  - Firefox
+```
 
 ## Inspiration
 
