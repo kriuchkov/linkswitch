@@ -14,10 +14,10 @@
     <img src="https://img.shields.io/github/v/release/kriuchkov/linkswitch?style=flat-square" alt="Release" />
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/kriuchkov/linkswitch?style=flat-square" alt="License" />
+    <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT" />
   </a>
-  <a href="https://github.com/kriuchkov/linkswitch/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/kriuchkov/linkswitch/build.yml?style=flat-square&label=build" alt="Build" />
+  <a href="https://github.com/kriuchkov/linkswitch/actions/workflows/build.yml">
+    <img src="https://github.com/kriuchkov/linkswitch/actions/workflows/build.yml/badge.svg?branch=master" alt="Build" />
   </a>
   <a href="#option-1-homebrew-recommended">
     <img src="https://img.shields.io/badge/homebrew-cask-FBB040?style=flat-square&logo=homebrew&logoColor=white" alt="Homebrew cask" />
