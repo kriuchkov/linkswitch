@@ -5,56 +5,73 @@
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
 
+static NSString *ConfigPath(void) {
+    return [NSHomeDirectory() stringByAppendingPathComponent:@".config/linkswitch/config.yaml"];
+}
+
+// NSURL rejects strings with characters that should have been percent-encoded,
+// such as spaces. Some apps send links like that, so encode them before giving up.
+static NSURL *URLFromString(NSString *string) {
+    NSURL *url = [NSURL URLWithString:string];
+    if (url) return url;
+    NSMutableCharacterSet *allowed = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
+    [allowed addCharactersInString:@"#%[]"];
+    NSString *encoded = [string stringByAddingPercentEncodingWithAllowedCharacters:allowed];
+    return encoded ? [NSURL URLWithString:encoded] : nil;
+}
+
 @implementation AppDelegate {
     BOOL _isHandlingURL;
 }
 
-- (void)openURL:(NSString *)urlString withBrowser:(NSString *)browserName config:(Config *)config {
-    NSURL *url = [NSURL URLWithString:urlString];
-    NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
-    
-    BrowserProfile *profile = config ? find_profile(config, [browserName UTF8String]) : NULL;
-    
-    if (profile) {
-        NSTask *task = [[NSTask alloc] init];
-        [task setLaunchPath:@"/bin/sh"];
-        
-        NSString *command;
-        NSString *escapedURL = [urlString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-
-        if (profile->custom_cmd) {
-            NSString *cmdTemplate = [NSString stringWithUTF8String:profile->custom_cmd];
-            command = [cmdTemplate stringByReplacingOccurrencesOfString:@"{url}" withString:escapedURL];
-        } else {
-            NSString *appName = [NSString stringWithUTF8String:profile->app_name];
-            NSString *argsStr = profile->args ? [NSString stringWithUTF8String:profile->args] : @"";
-            
-            NSString *escapedAppName = [appName stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-            
-            command = [NSString stringWithFormat:@"open -n -a \"%@\" \"%@\" --args %@", 
-                                 escapedAppName, escapedURL, argsStr];
-        }
-        
-        [task setArguments:@[@"-c", command]];
-        [task launch];
-        return;
+// Runs the profile's command with the URL as $1 (see build_profile_command).
+- (BOOL)launchProfile:(BrowserProfile *)profile withURL:(NSString *)urlString {
+    char *script = build_profile_command(profile);
+    NSString *command = script ? [NSString stringWithUTF8String:script] : nil;
+    free(script);
+    if (!command) {
+        NSLog(@"Profile \"%s\" has no usable cmd or app", profile->name);
+        return NO;
     }
-    
-    if (browserName) {
-        NSString *appPath = [workspace fullPathForApplication:browserName];
-        if (appPath) {
-            [workspace openURLs:@[url]
-                       withAppBundleIdentifier:[[NSBundle bundleWithPath:appPath] bundleIdentifier]
+
+    NSTask *task = [[NSTask alloc] init];
+    task.executableURL = [NSURL fileURLWithPath:@"/bin/sh"];
+    task.arguments = @[@"-c", command, @"linkswitch", urlString];
+    NSError *error = nil;
+    if (![task launchAndReturnError:&error]) {
+        NSLog(@"Could not run profile \"%s\": %@", profile->name, error);
+        return NO;
+    }
+    return YES;
+}
+
+// Opens the URL in the browser or profile called browserName. Returns NO if
+// that browser can't be found or the profile can't be run.
+- (BOOL)openURL:(NSString *)urlString withBrowser:(NSString *)browserName config:(Config *)config {
+    BrowserProfile *profile = config ? find_profile(config, [browserName UTF8String]) : NULL;
+    if (profile) {
+        return [self launchProfile:profile withURL:urlString];
+    }
+
+    NSURL *url = URLFromString(urlString);
+    if (!url) {
+        NSLog(@"Not a valid URL: %@", urlString);
+        return NO;
+    }
+
+    // Never fall back to the system's default browser: that is LinkSwitch itself.
+    NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+    NSString *appPath = browserName ? [workspace fullPathForApplication:browserName] : nil;
+    NSString *bundleID = appPath ? [[NSBundle bundleWithPath:appPath] bundleIdentifier] : nil;
+    if (!bundleID) {
+        NSLog(@"Could not find browser: %@", browserName);
+        return NO;
+    }
+    return [workspace openURLs:@[url]
+                       withAppBundleIdentifier:bundleID
                        options:NSWorkspaceLaunchDefault
                        additionalEventParamDescriptor:nil
                        launchIdentifiers:nil];
-        } else {
-            NSLog(@"Could not find browser: %@", browserName);
-            [workspace openURL:url];
-        }
-    } else {
-        [workspace openURL:url];
-    }
 }
 
 - (void)browserButtonClicked:(NSButton *)sender {
@@ -156,37 +173,49 @@
     [window close];
     
     if (response >= 0 && response < browsers.count) {
-        [self openURL:urlString withBrowser:browsers[response] config:config];
+        if (![self openURL:urlString withBrowser:browsers[response] config:config]) {
+            // Don't lose the link: Safari is always installed.
+            [self openURL:urlString withBrowser:@"Safari" config:NULL];
+        }
     }
 }
 
-- (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
+- (void)routeURL:(NSString *)urlString config:(Config *)config {
+    char *targetBrowser = find_browser_for_url(config, [urlString UTF8String]);
+    NSString *browserName = targetBrowser ? [NSString stringWithUTF8String:targetBrowser] : nil;
+    if (browserName && [self openURL:urlString withBrowser:browserName config:config]) {
+        return;
+    }
+    // No rule matched, or its browser can't be opened: let the user choose.
+    [self showBrowserPickerForURL:urlString withConfig:config];
+}
+
+- (void)routeURLs:(NSArray<NSString *> *)urlStrings {
     _isHandlingURL = YES;
-    NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-    if (!urlString) return;
-    
-    // Load Config
-    NSString *configPath = [NSHomeDirectory() stringByAppendingPathComponent:@".config/linkswitch/config.yaml"];
-    
-    Config *config = load_config([configPath UTF8String]);
-    char *targetBrowser = NULL;
-    
-    if (config) {
-        targetBrowser = find_browser_for_url(config, [urlString UTF8String]);
+    Config *config = load_config([ConfigPath() UTF8String]);
+    for (NSString *urlString in urlStrings) {
+        [self routeURL:urlString config:config];
     }
-    
-    if (targetBrowser) {
-        NSString *browserName = [NSString stringWithUTF8String:targetBrowser];
-        [self openURL:urlString withBrowser:browserName config:config];
-    } else {
-        // No rule matched, show picker
-        [self showBrowserPickerForURL:urlString withConfig:config];
-    }
-    
-    if (config) free_config(config);
-    
+    free_config(config);
+
     // Terminate after handling
     [NSApp terminate:nil];
+}
+
+- (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent {
+    NSString *urlString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
+    [self routeURLs:urlString ? @[urlString] : @[]];
+}
+
+// Files opened with LinkSwitch arrive here rather than as a GetURL event: it is
+// registered as a viewer of HTML documents, which is what a default browser is
+// asked to open when a local .html file is double-clicked.
+- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls {
+    NSMutableArray<NSString *> *urlStrings = [NSMutableArray array];
+    for (NSURL *url in urls) {
+        [urlStrings addObject:url.absoluteString];
+    }
+    [self routeURLs:urlStrings];
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification *)notification {
@@ -199,7 +228,7 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     // If not handling a URL (e.g. launched directly), open config file
     if (!_isHandlingURL) {
-        NSString *configPath = [NSHomeDirectory() stringByAppendingPathComponent:@".config/linkswitch/config.yaml"];
+        NSString *configPath = ConfigPath();
         if (![[NSFileManager defaultManager] fileExistsAtPath:configPath]) {
             // Create directory if needed
             NSString *configDir = [configPath stringByDeletingLastPathComponent];
