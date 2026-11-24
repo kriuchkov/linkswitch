@@ -66,6 +66,8 @@ jobs:
         formula-path: Casks/linkswitch.rb
         homebrew-tap: kriuchkov/homebrew-tap
         download-url: https://github.com/kriuchkov/linkswitch/releases/download/${{ github.ref_name }}/LinkSwitch.zip
-        create-pullrequest: false
+        # With false, v1.1.0 was committed to a new branch of the tap and no pull
+        # request was opened, so the cask stayed behind. With true it opens one.
+        create-pullrequest: true
       env:
         COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
