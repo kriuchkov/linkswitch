@@ -130,15 +130,17 @@ profiles:
 
 rules:
   # Open Zoom links in Zoom app
-  - match: "zoom.us"
-    browser: "zoom.us" 
-  
+  - domain: "zoom.us"
+    browser: "zoom.us"
+
   # Work links - in Chrome Work profile
-  - match: "github.com|gitlab.com"
+  - domain: "github.com"
     browser: "Chrome Work"
-  
-  # Local development - in Firefox
-  - match: "localhost|127.0.0.1"
+  - domain: "gitlab.com"
+    browser: "Chrome Work"
+
+  # Local development - in Firefox (a regex, anchored to the start of the URL)
+  - match: '^https?://(localhost|127\.0\.0\.1)([:/]|$)'
     browser: "Firefox"
 
 # List of browsers for the selection menu (if no rule is matched)
@@ -150,6 +152,8 @@ browsers:
   - Firefox
 ```
 
+Values are read the way YAML reads them: plain, `'single-quoted'` (where `''` stands for a quote) or `"double-quoted"` (where `\"` and `\\` are escapes). A `#` after a space starts a comment.
+
 ### Profiles
 
 You can define custom profiles for browsers that support command-line arguments (like Chrome, Brave, Edge). This is useful for opening links in specific user profiles.
@@ -157,7 +161,7 @@ You can define custom profiles for browsers that support command-line arguments 
 - `name`: The unique name you will use in `rules` and `browsers` list.
 - `app`: The actual application name (e.g., "Google Chrome").
 - `args`: Command-line arguments to pass when launching.
-- `cmd`: (Optional) A full custom command template. Use `{url}` as a placeholder. This overrides `app` and `args`.
+- `cmd`: (Optional) A full custom command template. Use `{url}` as a placeholder. This overrides `app` and `args`. LinkSwitch hands the link to the shell as a separate argument and quotes the placeholder itself, so no link can inject shell commands; `{url}`, `'{url}'` and `"{url}"` all work.
 
 #### Basic Examples
 
@@ -188,17 +192,18 @@ profiles:
 
 ### Rules
 
-Rules can be defined in two ways:
+Rules are checked from top to bottom, and the first one that matches picks the browser. If its browser can't be found, the picker is shown. Rules can be defined in two ways:
 
-**1. In `config.yaml`**:
+**1. In `config.yaml`**, each rule has a `browser` and either a `domain` or a `match`:
 
-- `match`: A regex string to match against the URL.
+- `domain`: A host name. It matches that host and its subdomains (`zoom.us` also covers `us02web.zoom.us`) and ignores the rest of the URL. Add a port to require it (`localhost:3000`), or a path the link must start with (`github.com/my-org`).
+- `match`: A regex (POSIX extended, case-insensitive) matched **anywhere in the URL**, query string included: `github.com` would also match `https://example.com/?next=github.com`. Prefer `domain`, or anchor the regex, e.g. `'^https://([a-z0-9-]+\.)*github\.com/'`.
     - Setting a match of `.*` to a browser will act as a catch all (only works in config)
 - `browser`: The name of the browser (or profile) to open.
 
 **2. Directory-based**:
 
-Create a `rules/` directory next to your config file (`~/.config/linkswitch/rules/`). Each file is named by a browser slug (lowercase, spaces → hyphens) and contains one domain per line. Lines starting with `#` and blank lines are ignored.
+Create a `rules/` directory next to your config file (`~/.config/linkswitch/rules/`). Each file is named by a browser slug (lowercase, spaces → hyphens) and contains one domain per line, matched like `domain` above. Lines starting with `#` and blank lines are ignored.
 
 ```
 ~/.config/linkswitch/

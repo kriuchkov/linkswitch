@@ -1,19 +1,22 @@
-# Configuration file for LinkSwitch
-default: Safari
+# LinkSwitch configuration: ~/.config/linkswitch/config.yaml
+# Reference: https://github.com/kriuchkov/linkswitch#configuration
 
+# Buttons in the picker, shown when no rule matches a link.
+# Profile names defined below can be listed here too.
 browsers:
   - Safari
   - Google Chrome
   - Firefox
-  - Secure Chrome
 
+# Browsers with extra arguments, or a full command with a {url} placeholder.
 profiles:
-  - name: Secure Chrome
-    cmd: "/usr/bin/sandbox-exec -f ~/.config/linkswitch/chrome_strict.sb /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --user-data-dir=/tmp/secure_chrome --no-first-run --no-default-browser-check -user-data-dir=/tmp/secure_chrome --password-store=basic \"{url}\""
+  # - name: Chrome Work
+  #   app: Google Chrome
+  #   args: --profile-directory='Profile 1'
 
+# Checked from top to bottom; the first match picks the browser.
 rules:
-  - match: "whoer.net"
-    browser: Secure Chrome
-  - match: "browserleaks.com"
-    browser: Secure Chrome
-
+  # - domain: zoom.us            # zoom.us and its subdomains
+  #   browser: zoom.us
+  # - domain: github.com
+  #   browser: Chrome Work
