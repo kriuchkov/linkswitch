@@ -20,6 +20,15 @@ static NSURL *URLFromString(NSString *string) {
     return encoded ? [NSURL URLWithString:encoded] : nil;
 }
 
+// The browser to fall back on: `default` from the config, or Safari.
+static NSString *DefaultBrowser(Config *config) {
+    if (config && config->default_browser && config->default_browser[0]) {
+        NSString *name = [NSString stringWithUTF8String:config->default_browser];
+        if (name) return name;
+    }
+    return @"Safari";
+}
+
 @implementation AppDelegate {
     BOOL _isHandlingURL;
 }
@@ -88,8 +97,8 @@ static NSURL *URLFromString(NSString *string) {
         }
         browsers = arr;
     } else {
-        // Default to only Safari if no browsers configured
-        browsers = @[@"Safari"];
+        // No browsers configured: offer only the default one
+        browsers = @[DefaultBrowser(config)];
     }
     
     CGFloat windowWidth = 260;
@@ -174,8 +183,12 @@ static NSURL *URLFromString(NSString *string) {
     
     if (response >= 0 && response < browsers.count) {
         if (![self openURL:urlString withBrowser:browsers[response] config:config]) {
-            // Don't lose the link: Safari is always installed.
-            [self openURL:urlString withBrowser:@"Safari" config:NULL];
+            // Don't lose the link: try the default browser, then Safari, which is always installed.
+            NSString *fallback = DefaultBrowser(config);
+            if (![self openURL:urlString withBrowser:fallback config:config] &&
+                ![fallback isEqualToString:@"Safari"]) {
+                [self openURL:urlString withBrowser:@"Safari" config:NULL];
+            }
         }
     }
 }

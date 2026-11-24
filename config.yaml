@@ -1,6 +1,9 @@
 # LinkSwitch configuration: ~/.config/linkswitch/config.yaml
 # Reference: https://github.com/kriuchkov/linkswitch#configuration
 
+# Used when the browser chosen in the picker can't be opened.
+default: Safari
+
 # Buttons in the picker, shown when no rule matches a link.
 # Profile names defined below can be listed here too.
 browsers:

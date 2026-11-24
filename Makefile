@@ -2,6 +2,15 @@ CC = clang
 CFLAGS = -Wall -Os -flto -fobjc-arc
 LDFLAGS = -framework Cocoa -flto -Wl,-dead_strip
 
+# The app is a universal binary that runs on the macOS version Info.plist promises.
+ARCHS = arm64 x86_64
+MIN_MACOS := $(shell /usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' resources/Info.plist)
+TARGET_FLAGS = $(addprefix -arch ,$(ARCHS)) -mmacosx-version-min=$(MIN_MACOS)
+
+# Version written into the bundle: the latest tag without its "v", unless given.
+# Usage: make VERSION=1.1.0
+VERSION ?= $(patsubst v%,%,$(shell git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0))
+
 BUILD_DIR = build
 SRC = src/main.m src/config.c
 TARGET = $(BUILD_DIR)/LinkSwitch
@@ -13,9 +22,9 @@ RESOURCES = $(CONTENTS)/Resources
 
 all: $(TARGET) bundle
 
-$(TARGET): $(SRC)
+$(TARGET): $(SRC) src/config.h
 	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(TARGET_FLAGS) $(LDFLAGS) -o $@ $(SRC)
 	strip $@
 
 bundle: $(TARGET) resources/Info.plist
@@ -23,8 +32,10 @@ bundle: $(TARGET) resources/Info.plist
 	mkdir -p $(RESOURCES)
 	cp $(TARGET) $(MACOS)/
 	cp resources/Info.plist $(CONTENTS)/
+	plutil -replace CFBundleShortVersionString -string "$(VERSION)" $(CONTENTS)/Info.plist
+	plutil -replace CFBundleVersion -string "$(VERSION)" $(CONTENTS)/Info.plist
 	@if [ -f resources/AppIcon.icns ]; then cp resources/AppIcon.icns $(RESOURCES)/; fi
-	@echo "Built $(APP_BUNDLE)"
+	@echo "Built $(APP_BUNDLE) $(VERSION)"
 
 test: src/config.c tests/test_config.c
 	$(CC) $(CFLAGS) -I. -o test_runner src/config.c tests/test_config.c
@@ -45,9 +56,6 @@ install: bundle
 
 # Release targets
 # Usage: make release VERSION=1.1.0
-VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-HOMEBREW_TAP ?= ../homebrew-tap
-
 release: bundle
 	@if [ "$(VERSION)" = "0.0.0" ]; then echo "Usage: make release VERSION=1.1.0"; exit 1; fi
 	@echo "Creating release v$(VERSION)..."
@@ -57,7 +65,6 @@ release: bundle
 	@echo "Next steps:"
 	@echo "  1. git tag v$(VERSION)"
 	@echo "  2. git push origin v$(VERSION)"
-	@echo "  3. Wait for GitHub Actions to create the Release"
-	@echo "  4. Update homebrew-tap"
+	@echo "  3. Wait for GitHub Actions to create the Release and bump the Homebrew cask"
 
 .PHONY: all bundle test clean install release

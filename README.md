@@ -152,6 +152,8 @@ browsers:
   - Firefox
 ```
 
+`default` is the browser LinkSwitch falls back on when the one chosen in the picker can't be opened, and the only button in the picker when `browsers` is empty; Safari if unset. It does not replace the picker: to send every link no rule matches to one browser, end `rules` with `- match: '.*'`.
+
 Values are read the way YAML reads them: plain, `'single-quoted'` (where `''` stands for a quote) or `"double-quoted"` (where `\"` and `\\` are escapes). A `#` after a space starts a comment.
 
 ### Profiles
@@ -227,7 +229,7 @@ Directory rules are merged with config rules. **Directory rules take priority**â
 
 ### Browsers List
 
-This list defines the buttons shown in the picker window when no rule matches the URL. If this list is empty or missing, the app will show only Safari.
+This list defines the buttons shown in the picker window when no rule matches the URL. If this list is empty or missing, the app will show only the `default` browser (Safari if unset).
 
 ```yaml
 browsers:

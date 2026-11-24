@@ -453,7 +453,8 @@ char* find_browser_for_url(Config *config, const char *url) {
     }
 
     // If no rule matches, return NULL to indicate we should show the picker.
-    // (Or return default_browser if we wanted to fallback automatically, but the user wants a picker)
+    // default_browser does not replace the picker; main.m falls back on it when
+    // the picker's choice can't be opened.
     return NULL;
 }
 
